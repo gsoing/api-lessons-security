@@ -1,5 +1,7 @@
 package org.gso.samples.security.config;
 
+import javax.sql.DataSource;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -13,18 +15,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration(proxyBeanMethods = false)
-@EnableWebSecurity
 @RequiredArgsConstructor
 public class CustomWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
 
+    private final DataSource dataSource;
+
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication()
-                .withUser("user1").password(passwordEncoder().encode("user1password"))
-                .roles("USER");
-        auth.inMemoryAuthentication()
-                .withUser("user2").password(passwordEncoder().encode("user3password"))
-                .roles("ADMIN");
+        auth.jdbcAuthentication()
+        .dataSource(dataSource);
     }
 
     @Override
@@ -37,8 +36,8 @@ public class CustomWebSecurityConfigurerAdapter extends WebSecurityConfigurerAda
                 .and()
                 .authorizeRequests()
                 .antMatchers("/api/**/public").permitAll()
-                .antMatchers("/api/**/user").hasRole("USER")
-                .antMatchers("/api/**/admin").hasRole("ADMIN")
+                .antMatchers("/api/**/user").hasAuthority("USER")
+                .antMatchers("/api/**/admin").hasAuthority("ADMIN")
                 .and()
                 .httpBasic()
                 .and()
